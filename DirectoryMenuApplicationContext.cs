@@ -42,10 +42,27 @@ namespace DirectoryMenuTray
       if (itms == null || itms.Count <= 0)
         return;
       menu.Items.AddRange(itms.ToArray());
+      menu.Items.Add(new ToolStripSeparator());
+      menu.Items.Add(new ToolStripMenuItem("Cancel"));
+
+      menu.AutoClose = true;
+      menu.Capture = true;
       menu.Show(Control.MousePosition);
+			menu.MouseLeave += Menu_MouseLeave;
     }
 
-    void Exit(object sender, EventArgs e)
+		private void Menu_MouseLeave(object sender, EventArgs e)
+		{
+      var menu = sender as ContextMenuStrip;
+      if (menu!=null)
+			{
+        menu.Hide();
+        menu.Dispose();
+
+      }
+		}
+
+		void Exit(object sender, EventArgs e)
     {
       // Hide tray icon, otherwise it will remain shown until user mouses over it
       trayIcon.Visible = false;
@@ -158,8 +175,8 @@ namespace DirectoryMenuTray
       private Color gripDark = Color.Pink;
       private Color menuBackground = Color.Black;
       private Color overflow = Color.Green;
-      private Color separatorDark = Color.Pink;
-      private Color separatorLight = Color.Pink;
+      private Color separatorDark = Color.White;
+      private Color separatorLight = Color.White;
       private Color imageMargin = Color.Black;
 
 
