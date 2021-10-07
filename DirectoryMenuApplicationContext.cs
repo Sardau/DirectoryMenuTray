@@ -47,29 +47,26 @@ namespace DirectoryMenuTray
 
       menu.AutoClose = true;
       menu.Capture = true;
-      menu.MouseLeave += Menu_MouseLeave;
       menu.MouseEnter += Menu_MouseEnter;
       menu.UseWaitCursor = false;
       menu.Cursor = Cursors.Hand;
       menu.Show(Control.MousePosition);
+      SetTimer(menu,1000);
     }
 
 		private void Menu_MouseEnter(object sender, EventArgs e)
 		{
-      DestroyTimer();
+      SetTimer(sender, 500);
     }
 
-		private void Menu_MouseLeave(object sender, EventArgs e)
-		{
-      SetTimer(sender);
-		}
     #region timer
     private Timer m_LeaveTimer;
-    private void SetTimer(object menu)
+    private void SetTimer(object menu, int interval)
     {
+      DestroyTimer();
       m_LeaveTimer = new Timer();
       // Hook up the Elapsed event for the timer. 
-      m_LeaveTimer.Interval = 500;
+      m_LeaveTimer.Interval = interval;
 			m_LeaveTimer.Tick += OnTimedEvent; ;
       m_LeaveTimer.Enabled = true;
       m_LeaveTimer.Tag = menu;
@@ -77,19 +74,44 @@ namespace DirectoryMenuTray
 
 		private void OnTimedEvent(object sender, EventArgs e)
     {
+
       if(m_LeaveTimer!=null)
 			{
-        m_LeaveTimer.Stop();
         var menu = m_LeaveTimer.Tag as ContextMenuStrip;
+        var mousePos = Cursor.Position;
+        m_LeaveTimer.Stop();
+        if (HitTest(mousePos, menu))
+				{
+          m_LeaveTimer.Start();
+          return;
+        }
         if (menu != null)
         {
           menu.Hide();
           menu.Dispose();
-
         }
       }
       DestroyTimer();
     }
+
+    private bool HitTest(Point mouseLoc, ToolStripDropDown menu)
+		{
+      if (menu.ClientRectangle.Contains(menu.PointToClient(mouseLoc)))
+        return true;
+      for (int i = 0; i < menu.Items.Count; i++)
+      {
+        var itm = menu.Items[i] as ToolStripMenuItem;
+        if (itm == null)
+          continue;
+        if (itm.DropDown != null && itm.DropDown.Visible)
+        {
+          if (HitTest(mouseLoc, itm.DropDown))
+            return true;
+        }
+      }
+
+      return false;
+		}
 
     private void DestroyTimer()
 		{
@@ -125,10 +147,16 @@ namespace DirectoryMenuTray
       {
         var fi = new FileInfo(file);
 
-        var folderItem = folder.ParseName(fi.Name);
+
+        FileAttributes fattrib = File.GetAttributes(file);
+        if (fattrib.HasFlag(FileAttributes.Hidden))
+          continue;
+        ToolStripMenuItem itm = null;
         if (string.Equals(fi.Extension, ".url", StringComparison.InvariantCultureIgnoreCase) ||
-          string.Equals(fi.Extension, ".lnk", StringComparison.InvariantCultureIgnoreCase))
+          string.Equals(fi.Extension, ".lnk", StringComparison.InvariantCultureIgnoreCase) 
+          )
         {
+          var folderItem = folder.ParseName(fi.Name);
           Shell32.IShellLinkDual link = folderItem.GetLink;
 
           string icon;
@@ -151,43 +179,59 @@ namespace DirectoryMenuTray
           {
             bmp = System.Drawing.Icon.ExtractAssociatedIcon(file).ToBitmap();
           }
-          var itm = new ToolStripMenuItem(Path.GetFileNameWithoutExtension(fi.Name), bmp, new EventHandler(Link_Click));
+          itm = new ToolStripMenuItem(Path.GetFileNameWithoutExtension(fi.Name), bmp);
 
 
 
-          var startInfo = new System.Diagnostics.ProcessStartInfo();
-          startInfo.FileName = lnkpath;
-          startInfo.Arguments = args;
-          startInfo.WorkingDirectory = workingfolder;
-          itm.Tag = startInfo;
-          ret.Add(itm);
+          itm.Tag = file;
         }
-        else if( Directory.Exists(file))
+        else if (fattrib.HasFlag(FileAttributes.Directory))
 				{
 
           var subItems = GetMenuItems(file);
           if(subItems!=null && subItems.Count>=0)
 					{
             var bmp = ShellIcon.GetLargeFolderIcon().ToBitmap();
-            var itm = new ToolStripMenuItem(fi.Name,bmp);
+            itm = new ToolStripMenuItem(fi.Name,bmp);
             itm.DropDownItems.AddRange(subItems.ToArray());
             itm.DropDown.ForeColor = Color.White;
-            
-            ret.Add(itm);
           }
+        }
+        else
+				{
+          Image bmp = System.Drawing.Icon.ExtractAssociatedIcon(file).ToBitmap();
+          itm = new ToolStripMenuItem(Path.GetFileNameWithoutExtension(file), bmp);
+          itm.Tag = file;
+        }
+
+        if(itm!=null)
+				{
+          itm.MouseDown += MenuItem_Click;
+          ret.Add(itm);
         }
       }
       return ret;
     }
 
-    void Link_Click(object sender, EventArgs e)
+		void MenuItem_Click(object sender, MouseEventArgs e)
     {
+
       var item = sender as ToolStripMenuItem;
       if (item == null)
         return;
-      var startInfo = item.Tag as System.Diagnostics.ProcessStartInfo;
-      if (startInfo == null)
+      var file = item.Tag as string;
+      if (string.IsNullOrEmpty(file))
         return;
+
+
+
+      var startInfo = new System.Diagnostics.ProcessStartInfo();
+      startInfo.FileName = file;
+      if (e.Button == MouseButtons.Right)
+      {
+        startInfo.Verb= "properties";
+      }
+      
       System.Diagnostics.Process process = new System.Diagnostics.Process();
       process.StartInfo = startInfo;
       process.Start();

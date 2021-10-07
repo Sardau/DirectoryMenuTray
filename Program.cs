@@ -32,6 +32,7 @@ namespace DirectoryMenuTray
 		private static string AppName = "Directory Menu Tray";
 		private static void AddToStartup(string path,bool add)
 		{
+#if !DEBUG
 			RegistryKey rk = Registry.CurrentUser.OpenSubKey
 					("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
 
@@ -39,7 +40,7 @@ namespace DirectoryMenuTray
 				rk.SetValue(AppName, $"{Application.ExecutablePath} \"{path}\"");
 			else
 				rk.DeleteValue(AppName, false);
-
+#endif
 		}
 
 
