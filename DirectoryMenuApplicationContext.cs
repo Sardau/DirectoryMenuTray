@@ -47,22 +47,66 @@ namespace DirectoryMenuTray
 
       menu.AutoClose = true;
       menu.Capture = true;
+      menu.MouseLeave += Menu_MouseLeave;
+      menu.MouseEnter += Menu_MouseEnter;
+      menu.UseWaitCursor = false;
+      menu.Cursor = Cursors.Hand;
       menu.Show(Control.MousePosition);
-			menu.MouseLeave += Menu_MouseLeave;
+    }
+
+		private void Menu_MouseEnter(object sender, EventArgs e)
+		{
+      DestroyTimer();
     }
 
 		private void Menu_MouseLeave(object sender, EventArgs e)
 		{
-      var menu = sender as ContextMenuStrip;
-      if (menu!=null)
-			{
-        menu.Hide();
-        menu.Dispose();
-
-      }
+      SetTimer(sender);
 		}
+    #region timer
+    private Timer m_LeaveTimer;
+    private void SetTimer(object menu)
+    {
+      m_LeaveTimer = new Timer();
+      // Hook up the Elapsed event for the timer. 
+      m_LeaveTimer.Interval = 500;
+			m_LeaveTimer.Tick += OnTimedEvent; ;
+      m_LeaveTimer.Enabled = true;
+      m_LeaveTimer.Tag = menu;
+    }
 
-		void Exit(object sender, EventArgs e)
+		private void OnTimedEvent(object sender, EventArgs e)
+    {
+      if(m_LeaveTimer!=null)
+			{
+        m_LeaveTimer.Stop();
+        var menu = m_LeaveTimer.Tag as ContextMenuStrip;
+        if (menu != null)
+        {
+          menu.Hide();
+          menu.Dispose();
+
+        }
+      }
+      DestroyTimer();
+    }
+
+    private void DestroyTimer()
+		{
+      if (m_LeaveTimer != null)
+      {
+        try
+        {
+          m_LeaveTimer.Stop();
+          m_LeaveTimer.Dispose();
+        }
+        catch { }
+        m_LeaveTimer = null;
+      }
+
+    }
+    #endregion
+    void Exit(object sender, EventArgs e)
     {
       // Hide tray icon, otherwise it will remain shown until user mouses over it
       trayIcon.Visible = false;
