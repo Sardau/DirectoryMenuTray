@@ -16,7 +16,7 @@ namespace DirectoryMenuTray
 
     public DirectoryMenuApplicationContext(string path)
     {
-      MainPath = path;
+     MainPath = path;
       // Initialize Tray Icon
       Bitmap theBitmap = Properties.Resources.FolderClose;
       IntPtr Hicon = theBitmap.GetHicon();// Get an Hicon for myBitmap.
