@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="Path" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\Users\fabio\Desktop\GAMES</Value>
+      <Value Profile="(Default)">C:\Users\fabio\OneDrive\Bureau\Games</Value>
     </Setting>
     <Setting Name="StartWithWindows" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>

@@ -157,22 +157,22 @@ namespace DirectoryMenuTray
           )
         {
           var folderItem = folder.ParseName(fi.Name);
-          Shell32.IShellLinkDual link = folderItem.GetLink;
-
           string icon;
-          link.GetIconLocation(out icon);
-          var lnkpath = link.Path;
-          string args = string.Empty;
-          try
-          {
-            args = link.Arguments;
-          }
-          catch { }
-          var workingfolder = link.WorkingDirectory;
-
           Image bmp = null;
           try
           {
+
+            Shell32.IShellLinkDual link = folderItem.GetLink;
+            link.GetIconLocation(out icon);
+            var lnkpath = link.Path;
+            string args = string.Empty;
+            try
+            {
+              args = link.Arguments;
+            }
+            catch { }
+            var workingfolder = link.WorkingDirectory;
+
             bmp = Bitmap.FromFile(new Uri(icon).LocalPath);
           }
           catch
